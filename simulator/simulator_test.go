@@ -10,18 +10,22 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	CacheLines = 16
+	BlockSize  = 1
+	MemSize    = 16
+)
+
 func NewStaticTestSystem(rng *rand.Rand, warmup simulator.WarmupType) system.System {
 	cconf := simulator.CacheConfig{
-		CacheLines: 10,
-		BlockSize:  1,
+		CacheLines: CacheLines,
+		BlockSize:  BlockSize,
 	}
 	sconf := simulator.SimConfig{
 		WarmupType: warmup,
 		RNG:        rng,
 	}
-	memSize := uint64(10)
-
-	return simulator.NewSeededSystem(memSize, cconf, sconf)
+	return simulator.NewSeededSystem(MemSize, cconf, sconf)
 }
 
 func TestNewSeededSystem(t *testing.T) {
@@ -50,7 +54,7 @@ func TestNewSeededSystem(t *testing.T) {
 
 		got := NewStaticTestSystem(rng, 0)
 
-		assert.Len(t, got.Mem.Data, 10)
+		assert.Len(t, got.Mem.Data, MemSize)
 		for _, v := range got.Mem.Data {
 			assert.NotEqual(t, byte(0), v)
 		}
@@ -61,9 +65,9 @@ func TestNewSeededSystem(t *testing.T) {
 
 		got := NewStaticTestSystem(rng, 0)
 
-		assert.Equal(t, got.Cache.BlockSize, uint64(1))
-		assert.Equal(t, got.Cache.LineCount, uint64(10))
-		assert.Len(t, got.Cache.Data, 10)
+		assert.Equal(t, got.Cache.BlockSize, uint64(BlockSize))
+		assert.Equal(t, got.Cache.LineCount, uint64(CacheLines))
+		assert.Len(t, got.Cache.Data, CacheLines)
 	})
 
 	t.Run("returns empty cache when cold warmup", func(t *testing.T) {
@@ -120,8 +124,11 @@ func TestNewSeededSystem(t *testing.T) {
 		for i, line := range got.Cache.Data {
 			assert.True(t, line.Valid)
 
-			// a singular byte will convert into an int8
-			assert.Equal(t, []byte{got.Mem.Data[i]}, line.Data)
+			addr := uint64(i) * got.Cache.BlockSize
+			split := system.Decode(addr, got.AddrLayout)
+
+			assert.Equal(t, split.Tag, line.Tag)
+			assert.Equal(t, got.Mem.ReadBlock(addr, got.Cache.BlockSize), line.Data)
 		}
 	})
 }

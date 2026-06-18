@@ -2,6 +2,7 @@
 package cache
 
 import (
+	"cache-protocols/bitutils"
 	"fmt"
 )
 
@@ -19,6 +20,14 @@ type Cache struct {
 }
 
 func NewCache(lineCount, blockSize uint64) Cache {
+	if !bitutils.IsPowerOfTwo(lineCount) {
+		panic("number of cache lines must be a power of two")
+	}
+
+	if !bitutils.IsPowerOfTwo(blockSize) {
+		panic("block size must be a power of two")
+	}
+
 	lines := make([]CacheLine, lineCount)
 
 	return Cache{

@@ -2,16 +2,22 @@ package memory
 
 import (
 	"fmt"
+
+	"cache-protocols/bitutils"
 )
 
 type Memory struct {
-	Data    []byte
+	Data []byte
 	Size uint64
 }
 
 func NewMemory(size uint64) Memory {
+	if !bitutils.IsPowerOfTwo(size) {
+		panic("size of memory must be a power of two")
+	}
+
 	return Memory{
-		Data:    make([]byte, size),
+		Data: make([]byte, size),
 		Size: size,
 	}
 }

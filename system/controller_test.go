@@ -66,14 +66,19 @@ func TestCacheRead(t *testing.T) {
 				BlockSize: 1,
 			}),
 		}
-
 		addr := MakeAddress(0, 0, sys.AddrLayout)
 
 		got := system.CacheRead(sys, addr, 1)
 
 		assert.Equal(t, []byte{10}, got)
-
 		line, hit := sys.Cache.Read(0, 0)
+		wantStats := system.Stats{
+			Hits: 0,
+			Misses: 1,
+			Reads: 1,
+			Writes: 0,
+		}
+		assert.Equal(t, wantStats, sys.Stats)
 		assert.True(t, hit)
 		assert.Equal(t, byte(10), line[0])
 	})
@@ -104,6 +109,13 @@ func TestCacheRead(t *testing.T) {
 
 		got := system.CacheRead(sys, addr, 1)
 
+		wantStats := system.Stats{
+			Hits: 1,
+			Misses: 0,
+			Reads: 1,
+			Writes: 0,
+		}
+		assert.Equal(t, wantStats, sys.Stats)
 		assert.Equal(t, []byte{10}, got)
 	})
 }

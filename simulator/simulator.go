@@ -1,7 +1,6 @@
 package simulator
 
 import (
-	"fmt"
 	"math/rand/v2"
 
 	"cache-protocols/cache"
@@ -74,7 +73,7 @@ func warmupCold(sys *system.System) {
 }
 
 func warmupRandom(sys *system.System, rng *rand.Rand) {
-	memoryBlocks := (sys.Mem.Size + sys.Cache.BlockSize - 1) / sys.Cache.BlockSize
+	memoryBlocks := evalMemoryBlocks(sys)
 
 	for range sys.Cache.Data {
 		blockIndex := rng.IntN(int(memoryBlocks))
@@ -91,7 +90,7 @@ func warmupRandom(sys *system.System, rng *rand.Rand) {
 func warmupPartial(sys *system.System, rng *rand.Rand) {
 	linesToFill := sys.Cache.LineCount / 2
 
-	memoryBlocks := (sys.Mem.Size + sys.Cache.BlockSize - 1) / sys.Cache.BlockSize
+	memoryBlocks := evalMemoryBlocks(sys)
 
 	for range linesToFill {
 		blockIndex := rng.IntN(int(memoryBlocks))
@@ -106,7 +105,7 @@ func warmupPartial(sys *system.System, rng *rand.Rand) {
 }
 
 func warmupFull(sys *system.System, rng *rand.Rand) {
-	memoryBlocks := (sys.Mem.Size + sys.Cache.BlockSize - 1) / sys.Cache.BlockSize
+	memoryBlocks := evalMemoryBlocks(sys)
 
 	for lineIndex := range sys.Cache.Data {
 		var candidates []uint64
@@ -114,7 +113,6 @@ func warmupFull(sys *system.System, rng *rand.Rand) {
 		for blockIndex := uint64(lineIndex); blockIndex < memoryBlocks; blockIndex += sys.Cache.LineCount {
 			candidates = append(candidates, blockIndex)
 		}
-		fmt.Println(candidates)
 
 		chosen := candidates[rng.IntN(len(candidates))]
 		addr := chosen * sys.Cache.BlockSize
@@ -123,6 +121,10 @@ func warmupFull(sys *system.System, rng *rand.Rand) {
 
 		split := system.Decode(addr, sys.AddrLayout)
 
-		sys.Cache.Insert(split.AlignedAddress, split.Tag, blockData)
+		sys.Cache.Insert(split.Index, split.Tag, blockData)
 	}
+}
+
+func evalMemoryBlocks(sys *system.System) uint64 {
+	return (sys.Mem.Size + sys.Cache.BlockSize - 1) / sys.Cache.BlockSize
 }

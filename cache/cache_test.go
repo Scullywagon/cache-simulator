@@ -8,10 +8,10 @@ import (
 	"cache-protocols/cache"
 )
 
-func NewTestCache(size, blockSize uint64) cache.Cache {
+func NewTestCache(lineCount, blockSize uint64) cache.Cache {
 	c := cache.Cache{
-		Data:      make([]cache.CacheLine, size),
-		LineCount: size,
+		Data:      make([]cache.CacheLine, lineCount),
+		LineCount: lineCount,
 		BlockSize: blockSize,
 	}
 
@@ -24,6 +24,22 @@ func NewTestCache(size, blockSize uint64) cache.Cache {
 	}
 
 	return c
+}
+
+func TestNewCache(t *testing.T) {
+	t.Run("creates new cahe when configuration is correct", func(t *testing.T) {
+			cache.NewCache(16, 1)
+	})
+	t.Run("panics when line count is not a power of two", func(t *testing.T) {
+		assert.Panics(t, func() {
+			cache.NewCache(3, 1)
+		})
+	})
+	t.Run("panics when block size is not a power of two", func(t *testing.T) {
+		assert.Panics(t, func() {
+			cache.NewCache(1, 3)
+		})
+	})
 }
 
 func TestRead(t *testing.T) {

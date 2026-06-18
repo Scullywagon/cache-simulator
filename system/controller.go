@@ -16,8 +16,9 @@ type System struct {
 
 type Stats struct {
 	Hits uint64
-	Miss uint64
-	Read uint64
+	Misses uint64
+	Reads uint64
+	Writes uint64
 }
 
 type SplitAddress struct {
@@ -36,13 +37,17 @@ type AddressLayout struct {
 }
 
 func CacheRead(sys *System, address uint64, size uint64) []byte {
+	sys.Stats.Reads++
 	split := Decode(address, sys.AddrLayout)
 
 	line, hit := sys.Cache.Read(split.Index, split.Tag)
 
 	start := uint64(split.Offset)
 	if hit {
+		sys.Stats.Hits++
 		return line[start : start+size]
+	} else {
+		sys.Stats.Misses++
 	}
 
 	block := sys.Mem.ReadBlock(split.AlignedAddress, sys.Cache.BlockSize)
